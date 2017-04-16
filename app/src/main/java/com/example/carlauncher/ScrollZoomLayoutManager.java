@@ -12,8 +12,10 @@ import rouchuan.customlayoutmanager.CustomLayoutManager;
 
 public class ScrollZoomLayoutManager extends CustomLayoutManager {
 
-    private static final float SCALE_RATE = 1.15f;
+    private static final float SCALE_RATE = 1.1f;
+    private static final float MAX_RATION = 9f;
     private int itemSpace = 0;
+    private final static String TAG = "ScrollZoomLayoutManager";
 
     public ScrollZoomLayoutManager(Context context, int itemSpace) {
         super(context);
@@ -37,13 +39,11 @@ public class ScrollZoomLayoutManager extends CustomLayoutManager {
 
     @Override
     protected void setItemViewProperty(View itemView, float targetOffset) {
-        Log.d("lzh", "setItemViewProperty,index = " + itemView.getTag());
         float scale = calculateScale((int) targetOffset + startLeft);
         float rotation = calculateRotation((int) targetOffset + startLeft);
         itemView.setScaleX(scale);
         itemView.setScaleY(scale);
-//        itemView.setCameraDistance(1000 * rotation + 1000);
-        itemView.setRotationY(rotation * 100);
+        itemView.setRotationY(rotation);
     }
 
     /**
@@ -51,43 +51,26 @@ public class ScrollZoomLayoutManager extends CustomLayoutManager {
      * @param x start positon of the view you want scale
      * @return the scale rate of current scroll offset
      */
-    private float calculateScale(int x){
-        Log.d("lzh", "calculateScale,x = " + x);
-        int center = (getHorizontalSpace() - mDecoratedChildWidth) / 2;
-        float deltaX = Math.abs(x - center);
-        float scale = 1.0f;
-        float diff = 0f;
-//        if((mDecoratedChildWidth-deltaX)>0) diff = mDecoratedChildWidth-deltaX;
-        diff = mDecoratedChildWidth - deltaX;
-        if (x < 0) {
-            scale = 1.08f;
-        } else if (x > getHorizontalSpace()) {
-            scale = 1.08f;
-        } else {
-            scale = deltaX / center / 12 + 1;
-        }
-
+    public float calculateScale(int x){
+        Log.d(TAG, "calculateScale,x = " + x);
+        float maxScale = SCALE_RATE - 1;
+        //a = center,b = maxScale
+        float center = (getHorizontalSpace() - mDecoratedChildWidth) / 2;
+        float a = maxScale / (center * center);
+        float scale = 1 + a * (x - center) * (x - center);
         return scale;
-//        return (SCALE_RATE-1f)/mDecoratedChildWidth * diff + 1;
     }
 
-    private float calculateRotation(int x){
-        Log.d("lzh", "calculateScale,x = " + x);
+    public float calculateRotation(int x){
+        Log.d(TAG, "calculateRotation,x = " + x);
         int center = (getHorizontalSpace() - mDecoratedChildWidth) / 2;
-        float deltaX = center - x;
-        float scale = 1.0f;
-        float diff = 0f;
-//        if((mDecoratedChildWidth-deltaX)>0) diff = mDecoratedChildWidth-deltaX;
-        diff = mDecoratedChildWidth - deltaX;
-        if (x < 0) {
-            scale = 0.1f;
-        } else if (x > getHorizontalSpace()) {
-            scale = 0.1f;
+        float maxRation = MAX_RATION;
+        float ration = maxRation;
+        float a = maxRation / (center * center);
+        if (x > center) {
+            return -a * (x - center) * (x - center);
         } else {
-            scale = deltaX / center / 10;
+            return a * (x - center) * (x - center);
         }
-
-        return scale;
-//        return (SCALE_RATE-1f)/mDecoratedChildWidth * diff + 1;
     }
 }

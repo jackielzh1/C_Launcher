@@ -1,6 +1,7 @@
 package com.example.carlauncher;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -10,12 +11,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
 import com.example.carlauncher.entity.Item;
 import com.example.carlauncher.helper.MyItemTouchCallback;
 import com.example.carlauncher.helper.OnRecyclerItemClickListener;
+import com.example.carlauncher.utils.EaseCubicInterpolator;
 import com.example.carlauncher.utils.VibratorUtil;
 
 import java.util.ArrayList;
@@ -55,11 +58,10 @@ public class MainActivity extends Activity {
 
             @Override
             public void onItemClick(RecyclerView.ViewHolder vh) {
-                Toast.makeText(MainActivity.this, "onItemClick,item = " + vh.getAdapterPosition(), Toast.LENGTH_SHORT);
                 //TODO.this is test
                 try{
                     Intent intent = new Intent();
-                    intent.setComponent(new ComponentName("com.nightonke.boommenusample", "com.nightonke.boommenusample.MainActivity"));
+                    intent.setClass(getApplicationContext(),TestActivity.class);
                     startActivity(intent);
                 }catch (Exception e) {
                     e.printStackTrace();
@@ -81,23 +83,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-
-//        ValueAnimator va = ValueAnimator.ofFloat(0, 1.0f);
-//        va.setDuration(1000);
-//        va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-//            @Override
-//            public void onAnimationUpdate(ValueAnimator animation) {
-//                float value = (float)animation.getAnimatedValue();
-//                int width = mRecyclerView.getWidth();
-//                for (int i = 0; i < mRecyclerView.getChildCount(); i++){
-//                    View child = mRecyclerView.getChildAt(i);
-//                    child.setAlpha(value);
-//                    child.setTranslationX((width - child.getLeft()) * (1 - value));
-//                }
-//            }
-//        });
-//        va.start();
-        startResumAnimation();
+        startResumeAnimation();
         mRecyclerView.setVisibility(View.VISIBLE);
     }
 
@@ -107,26 +93,48 @@ public class MainActivity extends Activity {
         mRecyclerView.setVisibility(View.INVISIBLE);
     }
 
-    private void startResumAnimation() {
+    private void startResumeAnimation() {
         AnimatorSet animatorSet = new AnimatorSet();
         ArrayList<ValueAnimator> animators = new ArrayList<>();
         final int width = mRecyclerView.getWidth();
         for (int i = 0; i < mRecyclerView.getChildCount(); i++){
             final View child = mRecyclerView.getChildAt(i);
             final ValueAnimator va = ValueAnimator.ofFloat(0, 1.0f);
-            va.setDuration(400 * i);
+            final int j = i;
+            va.setDuration(1000);
+            child.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            child.setTranslationX(width + child.getLeft());
+            child.setScaleX(1);
+            child.setScaleY(1);
+            child.setRotationY(0);
             va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
                     float value = (float)animation.getAnimatedValue();
-                    child.setTranslationX((width + child.getLeft()) * (1 - value) + 50 * (1 - value));
+                    int trans = width + child.getLeft();
+                    child.setTranslationX(trans * (1 - value) );
+                    float scale = scrollZoomLayoutManager.calculateScale((int)(trans * (1 - value)) + child.getLeft());
+                    float rotation = scrollZoomLayoutManager.calculateRotation((int)(trans * (1 - value)) + child.getLeft());
+                    child.setScaleX(scale);
+                    child.setScaleY(scale);
+                    child.setRotationY(rotation);
+                    mRecyclerView.setAlpha(value * value);
                 }
+            });
+            va.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    child.setLayerType(View.LAYER_TYPE_NONE, null);
+                }
+
             });
             animators.add(va);
         }
+        EaseCubicInterpolator interpolator = new EaseCubicInterpolator(0,0,.58f,1);
         for (int i = 0; i < animators.size(); i++) {
             animatorSet.playTogether(animators.get(i));
         }
+        animatorSet.setInterpolator(interpolator);
         animatorSet.start();
     }
 

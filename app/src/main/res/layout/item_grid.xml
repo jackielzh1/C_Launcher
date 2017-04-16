@@ -14,11 +14,11 @@
   ~ limitations under the License.
   -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="80dp"
+    android:layout_width="95dp"
     android:layout_height="wrap_content"
     android:clickable="true"
     android:focusable="true"
-    android:background="#7D000000">
+    android:background="#7Dffffff">
 
     <LinearLayout
         android:id="@+id/item"
